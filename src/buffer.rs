@@ -9,12 +9,12 @@ pub struct Buffer {
 #[derive(Debug, Hash, Clone)]
 pub struct Task {
     pub id: String,
-    pub item: Box<dyn Fn() + Send + 'static>,
+    pub item: fn(),
 }
 
 pub trait BufferTrait {
     fn new(buffer_size: Option<usize>) -> Self;
-    fn add(&mut self, id: String, task: Box<dyn Fn() + Send + 'static>) -> Result<String, String>;
+    fn add(&mut self, id: String, task: fn()) -> Result<String, String>;
     fn list_tasks(&self) -> Vec<Task>;
     fn remove(&mut self) -> Option<Task>;
 }
@@ -37,7 +37,7 @@ impl BufferTrait for Buffer {
         }
     }
 
-    fn add(&mut self, id: String, task: Box<dyn Fn() + Send + 'static>) -> Result<String, String> {
+    fn add(&mut self, id: String, task: fn()) -> Result<String, String> {
         for item in self.list_tasks().iter() {
             if item.id == id {
                 return Err(format!("Task with the same id already exists: {}", id));

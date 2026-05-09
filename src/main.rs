@@ -11,70 +11,56 @@ use std::{
 fn main() {
     let buffer = Arc::new(Mutex::new(Buffer::new(Some(100))));
 
-    match buffer.lock().unwrap().add(
-        String::from("task 1"),
-        Box::new(|| {
-            thread::sleep(Duration::from_secs(3));
-            println!("Task 1 executed");
-        }),
-    ) {
+    match buffer.lock().unwrap().add(String::from("task 1"), || {
+        thread::sleep(Duration::from_secs(3));
+        println!("Task 1 executed");
+    }) {
         Ok(id) => println!("Task {} added successfully", id),
         Err(e) => eprintln!("Error adding task: {}", e),
     }
 
-    match buffer.lock().unwrap().add(
-        String::from("task 2"),
-        Box::new(|| {
-            thread::sleep(Duration::from_secs(2));
-            println!("Task 2 executed");
-        }),
-    ) {
+    match buffer.lock().unwrap().add(String::from("task 2"), || {
+        thread::sleep(Duration::from_secs(1));
+        println!("Task 2 executed");
+    }) {
         Ok(id) => println!("Task {} added successfully", id),
         Err(e) => eprintln!("Error adding task: {}", e),
     }
 
-    match buffer.lock().unwrap().add(
-        String::from("task 3"),
-        Box::new(|| {
-            thread::sleep(Duration::from_secs(1));
-            println!("Task 3 executed");
-        }),
-    ) {
+    match buffer.lock().unwrap().add(String::from("task 3"), || {
+        thread::sleep(Duration::from_secs(5));
+        println!("Task 3 executed");
+    }) {
         Ok(id) => println!("Task {} added successfully", id),
         Err(e) => eprintln!("Error adding task: {}", e),
     }
 
-    match buffer.lock().unwrap().add(
-        String::from("task 4"),
-        Box::new(|| {
-            thread::sleep(Duration::from_secs(4));
-            println!("Task 4 executed");
-        }),
-    ) {
+    match buffer.lock().unwrap().add(String::from("task 4"), || {
+        thread::sleep(Duration::from_secs(4));
+        println!("Task 4 executed");
+    }) {
         Ok(id) => println!("Task {} added successfully", id),
         Err(e) => eprintln!("Error adding task: {}", e),
     }
 
     println!("\n");
 
-    let worker = Worker::new();
-    worker.start(buffer);
+    let mut handles = vec![];
 
-    // let worker2 = Worker::new();
-    // worker2.start(&mut buffer);
+    let worker1 = Worker::new();
+    let handle1 = worker1.start(Arc::clone(&buffer));
 
-    // let h: Vec<thread::JoinHandle<()>> = buffer
-    //     .list_tasks()
-    //     .iter()
-    //     .map(|task| {
-    //         let item = task.item;
-    //         thread::spawn(move || {
-    //             item();
-    //         })
-    //     })
-    //     .collect();
+    let worker2 = Worker::new();
+    let handle2 = worker2.start(Arc::clone(&buffer));
 
-    // for handle in h {
-    //     handle.join().unwrap();
-    // }
+    let worker3 = Worker::new();
+    let handle3 = worker3.start(Arc::clone(&buffer));
+
+    handles.push(handle1);
+    handles.push(handle3);
+    handles.push(handle2);
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
 }

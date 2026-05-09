@@ -1,4 +1,4 @@
-use crate::buffer::{self, Buffer, BufferTrait};
+use crate::buffer::{Buffer, BufferTrait};
 use std::{
     sync::{Arc, Mutex},
     thread,
@@ -21,14 +21,11 @@ impl Worker {
 
             match task {
                 Some(task) => {
-                    println!("{}", task.id);
                     let item = task.item;
                     item();
                 }
                 None => println!("No tasks to execute"),
             }
-
-            // println!("Worker finished executing task: {:?}", task);
         })
     }
 }
