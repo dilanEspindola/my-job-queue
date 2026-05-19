@@ -1,3 +1,4 @@
+use core::panic;
 use job_queue_rust::{
     buffer::{Buffer, BufferTrait},
     worker::Worker,
@@ -23,26 +24,36 @@ fn main() {
     let tasks_pending = Arc::new(AtomicUsize::new(4));
     let buffer = Arc::new(Mutex::new(Buffer::new(Some(100))));
 
-    match buffer.lock().unwrap().add(String::from("task 1"), || {
-        thread::sleep(Duration::from_secs(3));
-        println!("Task 1 executed");
-    }) {
+    match buffer.lock().unwrap().add(
+        String::from("task 1"),
+        Box::new(|| {
+            thread::sleep(Duration::from_secs(3));
+            println!("Task 1 executed");
+        }),
+    ) {
         Ok(id) => println!("Task {} added to the queue", id),
         Err(e) => eprintln!("Error adding task: {}", e),
     }
 
-    match buffer.lock().unwrap().add(String::from("task 2"), || {
-        thread::sleep(Duration::from_secs(1));
-        println!("Task 2 executed");
-    }) {
+    match buffer.lock().unwrap().add(
+        String::from("task 2"),
+        Box::new(|| {
+            // panic!("Simulated panic in task 2");
+            thread::sleep(Duration::from_secs(1));
+            println!("Task 2 executed");
+        }),
+    ) {
         Ok(id) => println!("Task {} added to the queue", id),
         Err(e) => eprintln!("Error adding task: {}", e),
     }
 
-    match buffer.lock().unwrap().add(String::from("task 3"), || {
-        thread::sleep(Duration::from_secs(5));
-        println!("Task 3 executed");
-    }) {
+    match buffer.lock().unwrap().add(
+        String::from("task 3"),
+        Box::new(|| {
+            thread::sleep(Duration::from_secs(5));
+            println!("Task 3 executed");
+        }),
+    ) {
         Ok(id) => println!("Task {} added to the queue", id),
         Err(e) => eprintln!("Error adding task: {}", e),
     }
@@ -50,7 +61,7 @@ fn main() {
     match buffer
         .lock()
         .unwrap()
-        .add(String::from("task 4"), running_background)
+        .add(String::from("task 4"), Box::new(running_background))
     {
         Ok(id) => println!("Task {} added to the queue", id),
         Err(e) => eprintln!("Error adding task: {}", e),
@@ -77,12 +88,15 @@ fn main() {
     );
 
     handles.push(handle1);
-    // handles.push(handle3);
     handles.push(handle2);
+    // handles.push(handle3);
     // handles.push(handle4);
 
     for handle in handles {
-        handle.join().unwrap();
+        match handle.join() {
+            Ok(_) => (),
+            Err(e) => eprintln!("Error joining thread: {:?}", e),
+        }
     }
 
     print_status_box(

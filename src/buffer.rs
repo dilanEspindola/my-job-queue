@@ -1,21 +1,26 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, fmt::Debug};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Buffer {
     pub buffer_size: Option<usize>,
     pub tasks: VecDeque<Task>,
 }
 
-#[derive(Debug, Hash, Clone)]
 pub struct Task {
     pub id: String,
-    pub item: fn(),
+    pub item: Box<dyn Fn() + Send + 'static>,
+}
+
+impl std::fmt::Debug for Task {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Task {{ id: {} }}", self.id)
+    }
 }
 
 pub trait BufferTrait {
     fn new(buffer_size: Option<usize>) -> Self;
-    fn add(&mut self, id: String, task: fn()) -> Result<String, String>;
-    fn list_tasks(&self) -> Vec<Task>;
+    fn add(&mut self, id: String, task: Box<dyn Fn() + Send + 'static>) -> Result<String, String>;
+    fn list_tasks(&self) -> Vec<&Task>;
     fn remove(&mut self) -> Option<Task>;
 }
 
@@ -37,7 +42,7 @@ impl BufferTrait for Buffer {
         }
     }
 
-    fn add(&mut self, id: String, task: fn()) -> Result<String, String> {
+    fn add(&mut self, id: String, task: Box<dyn Fn() + Send + 'static>) -> Result<String, String> {
         for item in self.list_tasks().iter() {
             if item.id == id {
                 return Err(format!("Task with the same id already exists: {}", id));
@@ -50,8 +55,8 @@ impl BufferTrait for Buffer {
         return Ok(id);
     }
 
-    fn list_tasks(&self) -> Vec<Task> {
-        return self.tasks.iter().map(|el| el).cloned().collect();
+    fn list_tasks(&self) -> Vec<&Task> {
+        return self.tasks.iter().collect();
     }
 
     fn remove(&mut self) -> Option<Task> {
