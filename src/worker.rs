@@ -42,6 +42,7 @@ impl Worker {
                     }
                 }
             }
+            // ESTA COSA NO SE EJECUTA, TOCA METER ALGUN SHUTDOWN SIGNAL PARA QUE HAGA ALGO
             active_threads.fetch_sub(1, Ordering::Relaxed);
         })
     }
