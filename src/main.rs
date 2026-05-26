@@ -1,10 +1,8 @@
-use core::panic;
 use job_queue_rust::{
     buffer::{Buffer, BufferTrait},
     worker::Worker,
 };
 use std::{
-    io::Error,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc, Mutex,

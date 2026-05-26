@@ -33,7 +33,9 @@ impl Worker {
                         tasks_executed.fetch_add(1, Ordering::Relaxed);
                         tasks_pending.fetch_sub(1, Ordering::Relaxed);
                     }
-                    None => break,
+                    None => {
+                        break;
+                    }
                 }
             }
 
