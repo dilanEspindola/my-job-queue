@@ -1,6 +1,6 @@
 use crate::buffer::{Buffer, BufferTrait};
 use std::{
-    sync::{atomic::AtomicUsize, atomic::Ordering, Arc, Mutex},
+    sync::{atomic::AtomicUsize, atomic::Ordering, Arc, Condvar, Mutex},
     thread,
 };
 
@@ -12,7 +12,7 @@ impl Worker {
     }
     pub fn start(
         &self,
-        buffer: Arc<Mutex<Buffer>>,
+        buffer: Arc<(Mutex<Buffer>, Condvar)>,
         active_threads: Arc<AtomicUsize>,
         tasks_executed: Arc<AtomicUsize>,
         tasks_pending: Arc<AtomicUsize>,
@@ -22,7 +22,9 @@ impl Worker {
 
             loop {
                 let task = {
-                    let mut buffer = buffer.lock().unwrap();
+                    let (lock, condvar) = &*buffer;
+                    let mut buffer = lock.lock().unwrap();
+                    condvar.notify_all();
                     buffer.remove()
                 };
 
@@ -34,11 +36,12 @@ impl Worker {
                         tasks_pending.fetch_sub(1, Ordering::Relaxed);
                     }
                     None => {
-                        break;
+                        let (lock, condvar) = &*buffer;
+                        let guard = lock.lock().unwrap();
+                        let _guard = condvar.wait(guard).unwrap();
                     }
                 }
             }
-
             active_threads.fetch_sub(1, Ordering::Relaxed);
         })
     }
