@@ -3,6 +3,7 @@ use job_queue_rust::{
     worker::Worker,
 };
 use std::{
+    io::{self},
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc, Condvar, Mutex,
@@ -21,6 +22,7 @@ fn main() {
     let active_threads = Arc::new(AtomicUsize::new(0));
     let tasks_executed = Arc::new(AtomicUsize::new(0));
     let tasks_pending = Arc::new(AtomicUsize::new(total_tasks));
+
     let _buffer = Arc::new((Mutex::new(Buffer::new(Some(100))), Condvar::new()));
 
     let (buffer, _cvar) = &*_buffer;
@@ -105,4 +107,13 @@ fn print_status_box(active_threads: usize, tasks_executed: usize, tasks_pending:
     println!("{}", row("Tasks executed:", tasks_executed));
     println!("{}", row("Tasks pending:", tasks_pending));
     println!("{}", border);
+}
+
+fn push_tasks_input() -> io::Result<String> {
+    let mut buf = String::new();
+    io::stdin().read_line(&mut buf)?;
+
+    println!("You entered: {}", buf.trim());
+
+    return Ok(buf.trim().to_string());
 }
