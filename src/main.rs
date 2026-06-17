@@ -25,22 +25,7 @@ fn main() {
 
     let _buffer = Arc::new((Mutex::new(Buffer::new(Some(100))), Condvar::new()));
 
-    let (buffer, _cvar) = &*_buffer;
-
-    for i in 0..total_tasks {
-        let id = format!("task {}", i + 1);
-        let id_clone = id.clone();
-        match buffer.lock().unwrap().add(
-            String::from(id),
-            Box::new(move || {
-                thread::sleep(Duration::from_secs(1));
-                println!("{}  executed", id_clone);
-            }),
-        ) {
-            Ok(id) => println!("Task {} added to the queue", id),
-            Err(e) => eprintln!("Error adding task: {}", e),
-        }
-    }
+    let (buffer, cvar) = &*_buffer;
 
     let mut handles = vec![];
 
@@ -74,6 +59,35 @@ fn main() {
         Arc::clone(&tasks_executed),
         Arc::clone(&tasks_pending),
     );
+
+    thread::sleep(Duration::from_secs(2));
+
+    for i in 0..total_tasks {
+        let id = format!("task {}", i + 1);
+        let id_clone = id.clone();
+        match buffer.lock().unwrap().add(
+            String::from(id),
+            cvar,
+            Box::new(move || {
+                thread::sleep(Duration::from_secs(1));
+                println!("{}  executed", id_clone);
+            }),
+        ) {
+            Ok(id) => println!("Task {} added to the queue", id),
+            Err(e) => eprintln!("Error adding task: {}", e),
+        }
+    }
+
+    // buffer
+    //     .lock()
+    //     .unwrap()
+    //     .add(
+    //         String::from("task 1"),
+    //         Box::new(|| {
+    //             println!("Task 1 executed");
+    //         }),
+    //     )
+    //     .unwrap_or("Error adding task".to_string());
 
     handles.push(handle1);
     handles.push(handle2);

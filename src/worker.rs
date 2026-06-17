@@ -22,9 +22,8 @@ impl Worker {
 
             loop {
                 let task = {
-                    let (lock, condvar) = &*buffer;
+                    let (lock, _condvar) = &*buffer;
                     let mut buffer = lock.lock().unwrap();
-                    condvar.notify_all();
                     buffer.remove()
                 };
 
@@ -37,8 +36,11 @@ impl Worker {
                     }
                     None => {
                         let (lock, condvar) = &*buffer;
-                        let guard = lock.lock().unwrap();
-                        let _guard = condvar.wait(guard).unwrap();
+                        let mut buffer = lock.lock().unwrap();
+                        while buffer.tasks.is_empty() {
+                            let guard = condvar.wait(buffer).unwrap();
+                            buffer = guard
+                        }
                     }
                 }
             }

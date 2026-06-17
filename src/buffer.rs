@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fmt::Debug};
+use std::{collections::VecDeque, fmt::Debug, sync::Condvar};
 
 #[derive(Debug)]
 pub struct Buffer {
@@ -19,7 +19,12 @@ impl std::fmt::Debug for Task {
 
 pub trait BufferTrait {
     fn new(buffer_size: Option<usize>) -> Self;
-    fn add(&mut self, id: String, task: Box<dyn Fn() + Send + 'static>) -> Result<String, String>;
+    fn add(
+        &mut self,
+        id: String,
+        condvar: &Condvar,
+        task: Box<dyn Fn() + Send + 'static>,
+    ) -> Result<String, String>;
     fn list_tasks(&self) -> Vec<&Task>;
     fn remove(&mut self) -> Option<Task>;
 }
@@ -42,16 +47,23 @@ impl BufferTrait for Buffer {
         }
     }
 
-    fn add(&mut self, id: String, task: Box<dyn Fn() + Send + 'static>) -> Result<String, String> {
+    fn add(
+        &mut self,
+        id: String,
+        condvar: &Condvar,
+        task: Box<dyn Fn() + Send + 'static>,
+    ) -> Result<String, String> {
         for item in self.list_tasks().iter() {
             if item.id == id {
                 return Err(format!("Task with the same id already exists: {}", id));
             }
         }
+
         self.tasks.push_back(Task {
             id: id.clone(),
             item: task,
         });
+        condvar.notify_one();
         return Ok(id);
     }
 
