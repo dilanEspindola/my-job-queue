@@ -1,2 +1,5 @@
 dev:
-	cargo watch -x run
+	cargo watch --ignore test.sock -x run
+
+daemon:
+	cargo run --bin monitor
