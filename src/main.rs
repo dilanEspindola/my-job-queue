@@ -4,10 +4,6 @@ use job_queue_rust::{
     worker::Worker,
 };
 use std::{
-    io::Read,
-    os::unix::net::{UnixListener, UnixStream},
-};
-use std::{
     io::{self},
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -15,6 +11,10 @@ use std::{
     },
     thread,
     time::Duration,
+};
+use std::{
+    io::{Read, Write},
+    os::unix::net::{UnixListener, UnixStream},
 };
 
 fn main() -> std::io::Result<()> {
@@ -31,6 +31,7 @@ fn main() -> std::io::Result<()> {
 
                 let n = socket_stream.read(&mut buf)?;
                 let received_data = String::from_utf8_lossy(&buf[..n]);
+                socket_stream.write_all("done".as_bytes())?;
                 println!("Received data: {}", received_data);
             }
             Err(e) => {
